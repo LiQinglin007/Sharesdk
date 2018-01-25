@@ -6,24 +6,29 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
+import com.example.lql.sharesdk.utils.LogUtils;
 import com.example.lql.sharesdk.utils.PublicStaticData;
 import com.example.lql.sharesdk.utils.ShareSDKUtils;
 import com.example.lql.sharesdk.utils.UmengShare;
 import com.umeng.socialize.ShareAction;
+import com.umeng.socialize.UMAuthListener;
 import com.umeng.socialize.UMShareAPI;
+import com.umeng.socialize.UMShareListener;
 import com.umeng.socialize.bean.SHARE_MEDIA;
 import com.umeng.socialize.media.UMImage;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import cn.sharesdk.framework.Platform;
+import cn.sharesdk.framework.PlatformActionListener;
 import cn.sharesdk.onekeyshare.OnekeyShare;
 import cn.sharesdk.sina.weibo.SinaWeibo;
 import cn.sharesdk.tencent.qq.QQ;
 import cn.sharesdk.wechat.friends.Wechat;
 
-import static com.example.lql.sharesdk.utils.UmengShare.umAuthListener;
-import static com.example.lql.sharesdk.utils.UmengShare.umShareListener;
 
-public class MainActivity extends Activity implements View.OnClickListener{
-
+public class MainActivity extends Activity implements View.OnClickListener, PlatformActionListener, UMShareListener, UMAuthListener {
 
 
     private android.widget.Button openShare;
@@ -48,8 +53,9 @@ public class MainActivity extends Activity implements View.OnClickListener{
     private Button WXLikeUmeng;
 
 
-    String picurl="http://pic33.nipic.com/20130916/3420027_192919547000_2.jpg";//测试图片地址
+    String picurl = "http://pic33.nipic.com/20130916/3420027_192919547000_2.jpg";//测试图片地址
 
+    private int SharesdkType;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,7 +63,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
         setContentView(R.layout.activity_main);
 
         initView();
-        showShare("测试标题","测试文本",null);
+        showShare("测试标题", "测试文本", null);
     }
 
     private void initView() {
@@ -98,7 +104,6 @@ public class MainActivity extends Activity implements View.OnClickListener{
         openShareUmeng.setOnClickListener(this);
 
 
-
         this.WXLike.setOnClickListener(this);
         this.WXfriendsshare.setOnClickListener(this);
         this.WXshare.setOnClickListener(this);
@@ -115,29 +120,28 @@ public class MainActivity extends Activity implements View.OnClickListener{
     }
 
 
-
     /**
      * @param title  标题
      * @param text   内容
-     * @param picurl   图片链接
-     *
-     *  QQ和QQ空间设置分享链接使用setTitleUrl();
-     *  设置标题：setTitle
-     *  设置内容：setText
-     *  设置网络图片：oks.setImageUrl("http://f1.sharesdk.cn/imgs/2014/02/26/owWpLZo_638x960.jpg");
-     *   设置本地图片： //oks.setImagePath("/sdcard/test.jpg");//确保SDcard下面存在此张图片
-     *
-     *  微信
-     *  url仅在微信（包括好友和朋友圈）中使用
-     *  oks.setUrl("http://qq.com");
+     * @param picurl 图片链接
+     *               <p>
+     *               QQ和QQ空间设置分享链接使用setTitleUrl();
+     *               设置标题：setTitle
+     *               设置内容：setText
+     *               设置网络图片：oks.setImageUrl("http://f1.sharesdk.cn/imgs/2014/02/26/owWpLZo_638x960.jpg");
+     *               设置本地图片： //oks.setImagePath("/sdcard/test.jpg");//确保SDcard下面存在此张图片
+     *               <p>
+     *               微信
+     *               url仅在微信（包括好友和朋友圈）中使用
+     *               oks.setUrl("http://qq.com");
      */
-    private void showShare(String title,String text,String picurl) {
+    private void showShare(String title, String text, String picurl) {
         OnekeyShare oks = new OnekeyShare();
         //关闭sso授权
         oks.disableSSOWhenAuthorize();
         oks.setTitle(title);
         oks.setText(text);
-        if(picurl!=null){
+        if (picurl != null) {
             oks.setImageUrl(picurl);
         }
         // 启动分享GUI
@@ -147,36 +151,45 @@ public class MainActivity extends Activity implements View.OnClickListener{
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()){
+        switch (v.getId()) {
             case R.id.openShare:
-                showShare("sharesdk测试","sharesdk测试","http://f1.sharesdk.cn/imgs/2014/02/26/owWpLZo_638x960.jpg");
+                showShare("sharesdk测试", "sharesdk测试", "http://f1.sharesdk.cn/imgs/2014/02/26/owWpLZo_638x960.jpg");
                 break;
             case R.id.QQLogin://QQ登录
-                ShareSDKUtils.Login(QQ.NAME);
+                SharesdkType = ShareSDKUtils.LOGINTYPE;
+                ShareSDKUtils.Login(QQ.NAME, this);
                 break;
             case R.id.WXLogin://微信登录
-                ShareSDKUtils.Login(Wechat.NAME);
+                SharesdkType = ShareSDKUtils.LOGINTYPE;
+                ShareSDKUtils.Login(Wechat.NAME, this);
                 break;
             case R.id.SinaLogin://微博登录
-                ShareSDKUtils.Login(SinaWeibo.NAME);
+                SharesdkType = ShareSDKUtils.LOGINTYPE;
+                ShareSDKUtils.Login(SinaWeibo.NAME, this);
                 break;
             case R.id.WXLike://收藏分享(微信需要有图片)
-                ShareSDKUtils.shareWXF("微信收藏分享测试标题sharesdk","微信收藏分享测试内容sharesdk",picurl,null);
+                SharesdkType = ShareSDKUtils.SHARETYPE;
+                ShareSDKUtils.shareWXF("微信收藏分享测试标题sharesdk", "微信收藏分享测试内容sharesdk", picurl, "http://www.haidu.com", this);
                 break;
             case R.id.WXfriendsshare://朋友圈分享(微信需要有图片)
-                ShareSDKUtils.shareWXM("朋友圈分享测试标题sharesdk","朋友圈分享测试内容sharesdk",picurl,null);
+                SharesdkType = ShareSDKUtils.SHARETYPE;
+                ShareSDKUtils.shareWXM("朋友圈分享测试标题sharesdk", "朋友圈分享测试内容sharesdk", picurl, "http://www.haidu.com", this);
                 break;
             case R.id.WXshare://微信分享(微信需要有图片)
-                ShareSDKUtils.shareWX("微信分享测试标题sharesdk","微信分享测试内容sharesdk",picurl,null);
+                SharesdkType = ShareSDKUtils.SHARETYPE;
+                ShareSDKUtils.shareWX("微信分享测试标题sharesdk", "微信分享测试内容sharesdk", picurl, "http://www.haidu.com", this);
                 break;
             case R.id.Sinashare://微博分享
-                ShareSDKUtils.shareSina("Sina分享测试sharesdk",null,MainActivity.this);
+                SharesdkType = ShareSDKUtils.SHARETYPE;
+                ShareSDKUtils.shareSina("Sina分享测试sharesdk", null, this);
                 break;
             case R.id.QZONEshare://空间
-                ShareSDKUtils.shareQzone("Qzone分享测试标题sharesdk","Qzone分享测试内容sharesdk",picurl,null);
+                SharesdkType = ShareSDKUtils.SHARETYPE;
+                ShareSDKUtils.shareQzone("Qzone分享测试标题sharesdk", "Qzone分享测试内容sharesdk", picurl, "http://www.haidu.com", this);
                 break;
             case R.id.QQshare://QQ
-                ShareSDKUtils.shareQQ("Qzone分享测试标题sharesdk","Qzone分享测试内容sharesdk",picurl,null);
+                SharesdkType = ShareSDKUtils.SHARETYPE;
+                ShareSDKUtils.shareQQ("Qzone分享测试标题sharesdk", "Qzone分享测试内容sharesdk", picurl, "http://www.haidu.com", this);
                 break;
 
 
@@ -185,40 +198,39 @@ public class MainActivity extends Activity implements View.OnClickListener{
 //----------------------------------------------------------------以下是友盟-------------------------------------------------------------
 
 
-
             case R.id.openShareUmeng:
                 new ShareAction(MainActivity.this).withText("测试啊测试啊")
                         .withTitle("测试啊测试啊")
                         .withMedia(new UMImage(MainActivity.this, picurl))
-                        .setDisplayList(SHARE_MEDIA.SINA,SHARE_MEDIA.QQ,SHARE_MEDIA.WEIXIN,SHARE_MEDIA.QZONE,SHARE_MEDIA.WEIXIN_CIRCLE,SHARE_MEDIA.WEIXIN_FAVORITE)
-                        .setCallback(umShareListener).open();
+                        .setDisplayList(SHARE_MEDIA.SINA, SHARE_MEDIA.QQ, SHARE_MEDIA.WEIXIN, SHARE_MEDIA.QZONE, SHARE_MEDIA.WEIXIN_CIRCLE, SHARE_MEDIA.WEIXIN_FAVORITE)
+                        .setCallback(this).open();
                 break;
             case R.id.QQLoginUmeng://QQ登录
-                UmengShare.UmengLogin(MainActivity.this,SHARE_MEDIA.QQ);
+                UmengShare.UmengLogin(MainActivity.this, SHARE_MEDIA.QQ, this);
                 break;
             case R.id.WXLoginUmeng://微信登录
-                UmengShare.UmengLogin(MainActivity.this,SHARE_MEDIA.WEIXIN);
+                UmengShare.UmengLogin(MainActivity.this, SHARE_MEDIA.WEIXIN, this);
                 break;
             case R.id.SinaLoginUmeng://微博登录
-                UmengShare.UmengLogin(MainActivity.this,SHARE_MEDIA.SINA);
+                UmengShare.UmengLogin(MainActivity.this, SHARE_MEDIA.SINA, this);
                 break;
             case R.id.WXLikeUmeng://收藏分享(微信需要有图片)
-                UmengShare.SharePic(MainActivity.this,"测试收藏","测试收藏内容",SHARE_MEDIA.WEIXIN_FAVORITE,picurl);
+                UmengShare.SharePic(MainActivity.this, "测试收藏", "测试收藏内容", SHARE_MEDIA.WEIXIN_FAVORITE, picurl, this);
                 break;
             case R.id.WXfriendsshareUmeng://朋友圈分享(微信需要有图片)
-                UmengShare.SharePic(MainActivity.this,"测试朋友圈","测试朋友圈内容",SHARE_MEDIA.WEIXIN_CIRCLE,picurl);
+                UmengShare.SharePic(MainActivity.this, "测试朋友圈", "测试朋友圈内容", SHARE_MEDIA.WEIXIN_CIRCLE, picurl, this);
                 break;
             case R.id.WXshareUmeng://微信分享(微信需要有图片)
-                UmengShare.SharePic(MainActivity.this,"测试分享","测试分享内容",SHARE_MEDIA.WEIXIN,picurl);
+                UmengShare.SharePic(MainActivity.this, "测试分享", "测试分享内容", SHARE_MEDIA.WEIXIN, picurl, this);
                 break;
             case R.id.SinashareUmeng://微博分享
-                UmengShare.SharePic(MainActivity.this,"测试微博","测试微博内容",SHARE_MEDIA.SINA,null);
+                UmengShare.SharePic(MainActivity.this, "测试微博", "测试微博内容", SHARE_MEDIA.SINA, null, this);
                 break;
             case R.id.QZONEshareUmeng://空间
-                UmengShare.SharePic(MainActivity.this,"测试空间","测试空间内容",SHARE_MEDIA.QZONE,null);
+                UmengShare.SharePic(MainActivity.this, "测试空间", "测试空间内容", SHARE_MEDIA.QZONE, null, this);
                 break;
             case R.id.QQshareUmeng://QQ
-                UmengShare.SharePic(MainActivity.this,"测试QQ","测试QQ内容",SHARE_MEDIA.QQ,null);
+                UmengShare.SharePic(MainActivity.this, "测试QQ", "测试QQ内容", SHARE_MEDIA.QQ, null, this);
                 break;
         }
     }
@@ -226,6 +238,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
 
     /**
      * 友盟QQ登录需要的回调   在有些低端手机上登录之后不走回调，需要这个方法
+     *
      * @param requestCode
      * @param resultCode
      * @param data
@@ -233,7 +246,83 @@ public class MainActivity extends Activity implements View.OnClickListener{
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        UMShareAPI.get(this).HandleQQError(MainActivity.this,requestCode,umAuthListener);
+        UMShareAPI.get(this).HandleQQError(MainActivity.this, requestCode, this);
         PublicStaticData.mShareAPI.onActivityResult(requestCode, resultCode, data);
+    }
+
+    //=======================================================ShareSDK的回调=======================================================
+
+    /**
+     * 这里是ShareSDK的回调
+     *
+     * @param platform
+     * @param i
+     * @param hashMap
+     */
+    @Override
+    public void onComplete(Platform platform, int i, HashMap<String, Object> hashMap) {
+        if (SharesdkType == ShareSDKUtils.LOGINTYPE) {
+            LogUtils.Loge("登录成功");
+            LogUtils.Loge("openid:" + platform.getDb().getUserId());//拿到登录后的openid
+            LogUtils.Loge("username:" + platform.getDb().getUserName());//拿到登录后的昵称
+        } else {
+            LogUtils.Loge("分享成功");
+        }
+    }
+
+    @Override
+    public void onError(Platform platform, int i, Throwable throwable) {
+        LogUtils.Loge(SharesdkType == ShareSDKUtils.LOGINTYPE ? "登录失败" + throwable.toString() : "分享失败" + throwable.toString());
+    }
+
+    @Override
+    public void onCancel(Platform platform, int i) {
+        LogUtils.Loge(SharesdkType == ShareSDKUtils.LOGINTYPE ? "登录取消" : "分享取消");
+    }
+
+
+    //=======================================================友盟的回调=======================================================
+    //这里注意：友盟的分享和登陆回调是分开的
+
+    /**
+     * 友盟分享的回调
+     *
+     * @param share_media
+     */
+    @Override
+    public void onResult(SHARE_MEDIA share_media) {
+        LogUtils.Loge("分享成功啦");
+    }
+
+    @Override
+    public void onError(SHARE_MEDIA share_media, Throwable throwable) {
+        LogUtils.Loge("分享失败啦" + throwable.toString());
+    }
+
+    @Override
+    public void onCancel(SHARE_MEDIA share_media) {
+        LogUtils.Loge("分享取消了");
+    }
+
+    /**
+     * 友盟登陆的回调
+     *
+     * @param share_media
+     */
+    @Override
+    public void onComplete(SHARE_MEDIA share_media, int i, Map<String, String> map) {
+        LogUtils.Loge("授权成功");
+        LogUtils.Loge("data:" + map.toString());
+        LogUtils.Loge("openid:" + map.get("openid"));
+    }
+
+    @Override
+    public void onError(SHARE_MEDIA share_media, int i, Throwable throwable) {
+        LogUtils.Loge("授权失败:" + throwable.toString());
+    }
+
+    @Override
+    public void onCancel(SHARE_MEDIA share_media, int i) {
+        LogUtils.Loge("关闭授权");
     }
 }

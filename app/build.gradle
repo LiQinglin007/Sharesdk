@@ -36,5 +36,4 @@ dependencies {
     compile files('libs/umeng_social_apiv6.0.0.jar')
     compile files('libs/umeng_social_viewv6.0.0.jar')
     compile files('libs/umeng_social_netv6.0.0.jar')
-    compile 'com.alibaba:fastjson:1.2.17'
 }

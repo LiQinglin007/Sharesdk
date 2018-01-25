@@ -19,9 +19,6 @@ public class BaseApplication extends Application {
         PublicStaticData.myShareSDK= new ShareSDK();
         PublicStaticData.myShareSDK.initSDK(getApplicationContext());
 
-
-
-
         PlatformConfig.setWeixin("wx282305cc871b77bc", "bdf0b6e3ff283ec29a12abf40ff62c1a");
         PlatformConfig.setSinaWeibo("170221996", "75314930606f946864ee0d7aeecc46ed");
 //        Config.REDIRECT_URL = "http://sns.whalecloud.com";//您新浪后台的回调地址
@@ -30,8 +27,6 @@ public class BaseApplication extends Application {
         PlatformConfig.setQQZone("1105747496", "EVHTBI0P5NDpuNIZ");
 
         UMShareAPI.get(this);
-
-
 
         super.onCreate();
     }
